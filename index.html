@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📘 Admin Panel</title>
+  <style>
+    body{font-family:Arial, sans-serif;max-width:720px;margin:0 auto;padding:24px}
+    h1{margin-bottom:8px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+    input[type="text"]{flex:1;min-width:260px;padding:10px;border:1px solid #ccc;border-radius:8px}
+    button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer}
+    .save{background:#2563eb;color:#fff}
+    .on{background:#16a34a;color:#fff}
+    .off{background:#dc2626;color:#fff}
+    .card{border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-top:12px}
+    .small{font-size:12px;color:#555}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px}
+    .ok{background:#e0ffe8;color:#166534}
+    .bad{background:#ffe4e6;color:#9f1239}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    // --- Your fixed config (as you requested) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCtDWs_Ft0e2NcU-dtwaWPfy-gAXa0azQg",
+      authDomain: "tanzim-main-admin-app.firebaseapp.com",
+      databaseURL: "https://tanzim-main-admin-app-default-rtdb.firebaseio.com",
+      projectId: "tanzim-main-admin-app",
+      storageBucket: "tanzim-main-admin-app.firebasestorage.app",
+      messagingSenderId: "12436676722",
+      appId: "1:12436676722:web:f066ffbc343f0117eea2eb",
+      measurementId: "G-QKK68SK6BN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // UI refs
+    const linkInput = () => document.getElementById("downloadLink");
+    const statusBadge = () => document.getElementById("statusBadge");
+    const liveLink = () => document.getElementById("liveLink");
+
+    // Live read
+    onValue(ref(db, "app"), (snap) => {
+      const data = snap.val() || {};
+      const st = data.status !== false; // default ON if missing
+      statusBadge().textContent = st ? "ON" : "OFF";
+      statusBadge().className = "pill " + (st ? "ok" : "bad");
+      liveLink().textContent = data.link || "(not set)";
+      linkInput().value = data.link || "";
+    });
+
+    // Save link
+    window.saveLink = async () => {
+      const url = linkInput().value.trim();
+      if (!url) { alert("লিংক লিখুন।"); return; }
+      // Optional: normalize
+      const finalUrl = url.startsWith("http://") || url.startsWith("https://") ? url : ("https://" + url);
+      await update(ref(db, "app"), { link: finalUrl });
+      alert("লিংক সেভ হয়েছে!");
+    };
+
+    // Toggle ON/OFF
+    window.setStatus = async (flag) => {
+      await update(ref(db, "app"), { status: !!flag });
+      alert("স্ট্যাটাস আপডেট হয়েছে!");
+    };
+  </script>
+</head>
+<body>
+  <h1>📘 Admin Panel</h1>
+  <p class="small">Realtime: <span id="statusBadge" class="pill ok">ON</span></p>
+
+  <div class="card">
+    <h3>Download লিংক সেট করুন</h3>
+    <div class="row">
+      <input id="downloadLink" type="text" placeholder="https://example.com/file.pdf"/>
+      <button class="save" onclick="saveLink()">Save Link</button>
+    </div>
+    <p class="small">Current: <code id="liveLink">(loading...)</code></p>
+  </div>
+
+  <div class="card">
+    <h3>App Status</h3>
+    <div class="row">
+      <button class="on" onclick="setStatus(true)">✅ Turn ON</button>
+      <button class="off" onclick="setStatus(false)">❌ Turn OFF</button>
+    </div>
+    <p class="small">
+      OFF করলে ইউজার অ্যাপ সাথে সাথে এই লিংকে রিডাইরেক্ট হবে:
+      <code>https://tanzim142030-debug.github.io/23/</code>
+    </p>
+  </div>
+</body>
+</html>
